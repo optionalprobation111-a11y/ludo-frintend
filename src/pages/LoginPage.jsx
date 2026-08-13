@@ -1,8 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import PageHeader from '../components/PageHeader.jsx'
 import { useUser } from '../context/UserContext.jsx'
-import { sendOtp, verifyOtp } from '../services/api'
+import { verifyFirebaseIdToken } from '../services/api'
+import { initializeApp } from 'firebase/app'
+import { getAuth, signInWithPhoneNumber, RecaptchaVerifier } from 'firebase/auth'
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID
+}
+
+const app = initializeApp(firebaseConfig)
+const auth = getAuth(app)
 
 export default function LoginPage({ redirectToRoom = false }) {
   const navigate = useNavigate()
@@ -14,8 +25,26 @@ export default function LoginPage({ redirectToRoom = false }) {
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [confirmationResult, setConfirmationResult] = useState(null)
+  const recaptchaVerifierRef = useRef(null)
+  const recaptchaContainerRef = useRef(null)
 
   const targetAfterAuth = redirectToRoom && roomId ? `/room/${roomId}` : '/play/friends'
+
+  useEffect(() => {
+    if (!recaptchaVerifierRef.current && recaptchaContainerRef.current) {
+      recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
+        size: 'invisible',
+        callback: () => {}
+      })
+    }
+    return () => {
+      if (recaptchaVerifierRef.current) {
+        recaptchaVerifierRef.current.clear()
+        recaptchaVerifierRef.current = null
+      }
+    }
+  }, [auth])
 
   const handleSendOtp = async (e) => {
     e.preventDefault()
@@ -23,7 +52,10 @@ export default function LoginPage({ redirectToRoom = false }) {
     setLoading(true)
     setError('')
     try {
-      await sendOtp(phone.trim())
+      const appVerifier = recaptchaVerifierRef.current
+      if (!appVerifier) throw new Error('reCAPTCHA not ready')
+      const confirmation = await signInWithPhoneNumber(auth, phone.trim(), appVerifier)
+      setConfirmationResult(confirmation)
       setStep('otp')
     } catch (err) {
       setError(err.message || 'Could not send OTP. Try again.')
@@ -34,11 +66,13 @@ export default function LoginPage({ redirectToRoom = false }) {
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault()
-    if (otp.length !== 6) return
+    if (otp.length !== 6 || !confirmationResult) return
     setLoading(true)
     setError('')
     try {
-      const { token, isNewUser } = await verifyOtp(phone.trim(), otp)
+      const result = await confirmationResult.confirm(otp)
+      const idToken = await result.user.getIdToken()
+      const { token, isNewUser } = await verifyFirebaseIdToken(idToken)
       login(token)
       if (isNewUser) {
         navigate('/welcome', { state: { redirectTo: targetAfterAuth } })
@@ -61,7 +95,7 @@ export default function LoginPage({ redirectToRoom = false }) {
         </h1>
         <p className="mt-2 text-sm text-muted">
           {step === 'phone'
-            ? 'We only ask for this to send invites and keep your stats — it\u2019s never shown to anyone else.'
+            ? 'We only ask for this to send invites and keep your stats – it\u2019s never shown to anyone else.'
             : `We sent a 6-digit code to ${phone}.`}
         </p>
 
@@ -77,6 +111,7 @@ export default function LoginPage({ redirectToRoom = false }) {
               className="rounded-xl border border-hairline bg-raised px-4 py-3.5 text-cream
                 placeholder:text-muted/70 outline-none focus:border-brass/60"
             />
+            <div ref={recaptchaContainerRef} />
             {error && <p className="text-sm text-token-red">{error}</p>}
             <button type="submit" disabled={loading || !phone.trim()} className="btn-primary">
               {loading ? 'Sending…' : 'Send OTP'}
