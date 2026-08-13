@@ -1,11 +1,6 @@
 import { io } from 'socket.io-client'
 
-// Single shared socket connection. Events match the contract in Section 8
-// (frontend prompt) / Section 9 (backend prompt) exactly:
-//
-// client -> server: room:join, game:rollDice, game:moveToken
-// server -> client: room:playerJoined, game:state, game:over
-
+// Single shared socket connection.
 let socket = null
 
 export function getSocket() {
@@ -30,20 +25,31 @@ export function disconnectSocket() {
 
 // --- client -> server emitters ---
 
-export function joinRoom({ roomId, token }) {
-  getSocket().emit('room:join', { roomId, token })
+export function joinRoom({ roomId, token, name, isSolo = false, botName, botDifficulty, anonId }) {
+  getSocket().emit('room:join', {
+    roomId,
+    token,
+    name,
+    isSolo,
+    botName,
+    botDifficulty,
+    anonId
+  })
+}
+
+export function setTotalPlayers({ roomId, totalPlayers }) {
+  getSocket().emit('room:setTotalPlayers', { roomId, totalPlayers })
 }
 
 export function rollDice({ roomId }) {
   getSocket().emit('game:rollDice', { roomId })
 }
 
-export function moveToken({ roomId, tokenId, targetCell }) {
-  getSocket().emit('game:moveToken', { roomId, tokenId, targetCell })
+export function moveToken({ roomId, tokenId }) {
+  getSocket().emit('game:moveToken', { roomId, tokenId })
 }
 
 // --- server -> client listener helpers ---
-// Each returns an unsubscribe function for easy cleanup in useEffect.
 
 export function onPlayerJoined(handler) {
   const s = getSocket()
