@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-ink text-cream font-body antialiased;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+
+  :focus-visible {
+    outline: 2px solid #C6A15B;
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  ::selection {
+    background: rgba(198, 161, 91, 0.35);
+    color: #F3EFE6;
+  }
+}
+
+@layer components {
+  .board-backdrop {
+    background-color: #0F0F17;
+    background-image:
+      linear-gradient(rgba(243,239,230,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(243,239,230,0.035) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brass px-6 py-3.5
+      font-body font-semibold text-ink transition-all duration-200
+      hover:bg-brass-bright active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-hairline
+      bg-transparent px-6 py-3.5 font-body font-semibold text-cream transition-all duration-200
+      hover:border-brass/60 hover:bg-white/[0.03] active:scale-[0.98];
+  }
+
+  .panel {
+    @apply rounded-2xl border border-hairline bg-surface shadow-panel;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
