@@ -5,7 +5,7 @@ import InviteRow from '../components/InviteRow.jsx'
 import { useUser } from '../context/UserContext.jsx'
 import { createRoom, sendInvite } from '../services/api'
 import { useSocket } from '../hooks/useSocket'
-import { onPlayerJoined } from '../services/socket'
+import { onPlayerJoined, setTotalPlayers } from '../services/socket'
 
 export default function PlayWithFriendSetup() {
   const navigate = useNavigate()
@@ -47,6 +47,8 @@ export default function PlayWithFriendSetup() {
       const { roomId: newRoomId } = await createRoom({ token, totalPlayers: n + 1 })
       setRoomId(newRoomId)
       setStatuses(Object.fromEntries(Array.from({ length: n }, (_, i) => [i, 'idle'])))
+      // Backend ko totalPlayers batana zaroori hai multiplayer room start ke liye
+      setTotalPlayers({ roomId: newRoomId, totalPlayers: n + 1 })
     } catch (err) {
       setError(err.message || 'Could not create a table. Try again.')
     } finally {
@@ -65,7 +67,8 @@ export default function PlayWithFriendSetup() {
   }
 
   const allJoined =
-    friendCount !== null && Object.values(statuses).length === friendCount &&
+    friendCount !== null &&
+    Object.values(statuses).length === friendCount &&
     Object.values(statuses).every((s) => s === 'joined')
 
   return (
@@ -84,7 +87,7 @@ export default function PlayWithFriendSetup() {
                   type="button"
                   onClick={() => chooseFriendCount(n)}
                   disabled={creatingRoom}
-                  className="panel flex flex-col items-center gap-1 py-6 transition-all hover:border-brass/50 disabled:opacity-50"
+                  className="panel flex flex-col items-center gap-1 px-6 transition-all hover:border-brass/50 disabled:opacity-50"
                 >
                   <span className="font-display text-3xl font-semibold text-cream">{n}</span>
                   <span className="text-xs text-muted">{n === 1 ? 'friend' : 'friends'}</span>
@@ -96,7 +99,7 @@ export default function PlayWithFriendSetup() {
         ) : (
           <>
             <p className="mt-2 text-sm text-muted">
-              Send an invite to each friend — they&rsquo;ll join this table the moment they verify.
+              Send an invite to each friend – they&rsquo;ll join this table the moment they verify.
             </p>
             <div className="mt-6 flex flex-col gap-3">
               {Array.from({ length: friendCount }, (_, i) => (
