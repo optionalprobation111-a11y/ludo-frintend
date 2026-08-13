@@ -3,28 +3,31 @@ import { useNavigate, useParams } from 'react-router-dom'
 import PageHeader from '../components/PageHeader.jsx'
 import DiceRoller from '../components/DiceRoller.jsx'
 import Token from '../components/Token.jsx'
-import { buildBoard } from '../utils/boardLayout'
+import { buildBoard, getCellForSteps } from '../utils/boardLayout'
 import { useSocket } from '../hooks/useSocket'
 import { joinRoom, rollDice, moveToken, onGameState, onGameOver } from '../services/socket'
 import { submitGameResult } from '../services/api'
 import { useUser } from '../context/UserContext.jsx'
 
-const COLOR_LABEL = { red: 'Red', green: 'Green', yellow: 'Yellow', blue: 'Blue' }
-
-// `opponents` is a list of { name, color } for display only. `roomId` may be
-// a friend-play room or an ad-hoc room generated for a solo bot match — in
-// both cases the backend is the sole source of truth for dice + legality,
-// pushed to the client via the `game:state` / `game:over` socket events.
-export default function GameBoard({ mode = 'multiplayer', roomId: roomIdProp, opponents = [], onExit }) {
+export default function GameBoard({
+  mode = 'multiplayer',
+  roomId: roomIdProp,
+  opponents = [],
+  onExit,
+  isSolo = false,
+  botName,
+  botDifficulty
+}) {
   const navigate = useNavigate()
   const params = useParams()
   const roomId = roomIdProp || params.roomId
-  const { token, anonId } = useUser()
+  const { token, anonId, name } = useUser()
 
   const cells = useMemo(() => buildBoard(), [])
   const [diceValue, setDiceValue] = useState(1)
   const [currentTurn, setCurrentTurn] = useState(null)
   const [boardState, setBoardState] = useState({})
+  const [legalMoves, setLegalMoves] = useState([])
   const [winner, setWinner] = useState(null)
   const [rolling, setRolling] = useState(false)
 
@@ -32,12 +35,42 @@ export default function GameBoard({ mode = 'multiplayer', roomId: roomIdProp, op
 
   useEffect(() => {
     if (!roomId) return undefined
-    joinRoom({ roomId, token })
 
-    const offState = onGameState(({ boardState: bs, currentTurn: turn, diceValue: dv }) => {
-      setBoardState(bs || {})
-      setCurrentTurn(turn ?? null)
+    joinRoom({
+      roomId,
+      token,
+      name: name || (isSolo ? 'You' : 'Player'),
+      isSolo,
+      botName,
+      botDifficulty,
+      anonId: !token ? anonId : undefined
+    })
+
+    const offState = onGameState((state) => {
+      // Backend sends { tokens, turnOrder, currentTurn, diceValue, legalMoves? }
+      const { tokens, currentTurn: turn, diceValue: dv, legalMoves: lm } = state || {}
       if (typeof dv === 'number') setDiceValue(dv)
+      if (turn) setCurrentTurn(turn)
+      if (Array.isArray(lm)) setLegalMoves(lm)
+
+      // Convert backend tokens -> row/col boardState
+      if (tokens) {
+        const mapped = {}
+        Object.entries(tokens).forEach(([color, tokenList]) => {
+          tokenList.forEach((t) => {
+            const cell = getCellForSteps(color, t.steps)
+            if (!cell) return
+            const key = `${cell.row},${cell.col}`
+            if (!mapped[key]) mapped[key] = []
+            mapped[key].push({
+              tokenId: t.id,
+              color,
+              movable: legalMoves?.includes(t.id) && currentTurn === color
+            })
+          })
+        })
+        setBoardState(mapped)
+      }
       setRolling(false)
     })
 
@@ -48,11 +81,11 @@ export default function GameBoard({ mode = 'multiplayer', roomId: roomIdProp, op
           token: token || undefined,
           anonId: !token ? anonId : undefined,
           roomId,
-          won: false, // authoritative win/loss for "you" comes from the backend-driven UI, not guessed client-side
+          won: false, // backend decides win via game over, this is placeholder
           moveStats: {}
         })
       } catch {
-        // non-blocking — result submission failing shouldn't trap the player on this screen
+        // non-blocking
       }
     })
 
@@ -60,7 +93,7 @@ export default function GameBoard({ mode = 'multiplayer', roomId: roomIdProp, op
       offState()
       offOver()
     }
-  }, [roomId, token, anonId])
+  }, [roomId, token, anonId, name, isSolo, botName, botDifficulty])
 
   const handleRoll = () => {
     if (!roomId) return
@@ -68,9 +101,9 @@ export default function GameBoard({ mode = 'multiplayer', roomId: roomIdProp, op
     rollDice({ roomId })
   }
 
-  const handleTokenMove = (tokenId, targetCell) => {
+  const handleTokenMove = (tokenId) => {
     if (!roomId) return
-    moveToken({ roomId, tokenId, targetCell })
+    moveToken({ roomId, tokenId })
   }
 
   return (
@@ -175,10 +208,10 @@ function BoardCellRender({ cell, tokens = [], onTokenClick }) {
       <div className="flex flex-wrap items-center justify-center gap-[1px]">
         {(tokens || []).map((t) => (
           <Token
-            key={t.tokenId}
+            key={`${t.color}-${t.tokenId}`}
             color={t.color}
             active={t.movable}
-            onClick={() => onTokenClick(t.tokenId, t.targetCell)}
+            onClick={() => onTokenClick(t.tokenId)}
           />
         ))}
       </div>
