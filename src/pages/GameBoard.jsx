@@ -39,21 +39,19 @@ export default function GameBoard({
     joinRoom({
       roomId,
       token,
-      name: name || (isSolo ? 'You' : 'Player'),
+      name: name || (isSolo? 'You' : 'Player'),
       isSolo,
       botName,
       botDifficulty,
-      anonId: !token ? anonId : undefined
+      anonId:!token? anonId : undefined
     })
 
     const offState = onGameState((state) => {
-      // Backend sends { tokens, turnOrder, currentTurn, diceValue, legalMoves? }
       const { tokens, currentTurn: turn, diceValue: dv, legalMoves: lm } = state || {}
       if (typeof dv === 'number') setDiceValue(dv)
       if (turn) setCurrentTurn(turn)
       if (Array.isArray(lm)) setLegalMoves(lm)
 
-      // Convert backend tokens -> row/col boardState
       if (tokens) {
         const mapped = {}
         Object.entries(tokens).forEach(([color, tokenList]) => {
@@ -65,7 +63,7 @@ export default function GameBoard({
             mapped[key].push({
               tokenId: t.id,
               color,
-              movable: legalMoves?.includes(t.id) && currentTurn === color
+              movable: lm?.includes(t.id) && turn === color
             })
           })
         })
@@ -79,9 +77,9 @@ export default function GameBoard({
       try {
         await submitGameResult({
           token: token || undefined,
-          anonId: !token ? anonId : undefined,
+          anonId:!token? anonId : undefined,
           roomId,
-          won: false, // backend decides win via game over, this is placeholder
+          won: false,
           moveStats: {}
         })
       } catch {
@@ -93,7 +91,7 @@ export default function GameBoard({
       offState()
       offOver()
     }
-  }, [roomId, token, anonId, name, isSolo, botName, botDifficulty])
+  }, [roomId, token, anonId, name, isSolo, botName, botDifficulty, legalMoves])
 
   const handleRoll = () => {
     if (!roomId) return
@@ -107,7 +105,7 @@ export default function GameBoard({
   }
 
   return (
-    <div className="board-backdrop min-h-screen">
+    <div className="board-backdrop min-h-screen bg-gradient-to-br from-[#0B0F1A] via-[#111827] to-[#0B0F1A]">
       <PageHeader showBack />
 
       <main className="mx-auto flex max-w-4xl flex-col items-center gap-6 px-4 pb-16">
@@ -115,16 +113,21 @@ export default function GameBoard({
           {opponents.map((o) => (
             <span
               key={o.name}
-              className={`rounded-full border px-4 py-1.5 text-sm font-medium
-                ${currentTurn === o.name ? 'border-brass text-brass' : 'border-hairline text-muted'}`}
+              className={`rounded-full border-2 px-4 py-1.5 text-sm font-semibold
+                ${currentTurn === o.name
+                 ? 'border-[#FFD700] text-[#FFD700] bg-[#FFD700]/10'
+                  : 'border-[#374151] text-gray-400'}`}
             >
               {o.name}
             </span>
           ))}
         </div>
 
-        <div className="panel aspect-square w-full max-w-[560px] overflow-hidden p-2">
-          <div className="grid h-full w-full grid-cols-[repeat(15,1fr)] grid-rows-[repeat(15,1fr)] gap-[1px]">
+        <div className="aspect-square w-full max-w-[600px] overflow-hidden p-4 rounded-3xl
+          bg-gradient-to-br from-[#111827] to-[#0B0F1A]
+          shadow-[0_20px_50px_rgba(0,0,0,0.6)]
+          border-2 border-[#374151]">
+          <div className="grid h-full w-full grid-cols-[repeat(15,1fr)] grid-rows-[repeat(15,1fr)] gap-[2px]">
             {cells.map((cell) => (
               <BoardCellRender
                 key={`${cell.row}-${cell.col}`}
@@ -143,29 +146,30 @@ export default function GameBoard({
             rolling={rolling}
             disabled={!roomId || Boolean(winner)}
           />
-          <p className="text-sm text-muted">
-            {winner ? 'Game over' : currentTurn ? `${currentTurn}'s turn` : 'Waiting for the table…'}
+          <p className="text-sm font-medium text-gray-300">
+            {winner? 'Game over' : currentTurn? `${currentTurn}'s turn` : 'Waiting for the table…'}
           </p>
         </div>
       </main>
 
       {winner && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-ink/80 p-6 backdrop-blur-sm">
-          <div className="panel w-full max-w-sm animate-rise-in p-8 text-center">
-            <span className="text-4xl">🏆</span>
-            <h2 className="mt-4 font-display text-2xl font-semibold text-cream">{winner} wins!</h2>
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm">
+          <div className="w-full max-w-sm animate-rise-in p-8 text-center rounded-2xl
+            bg-gradient-to-br from-[#111827] to-[#0B0F1A] border-2 border-[#374151]">
+            <span className="text-5xl">🏆</span>
+            <h2 className="mt-4 font-display text-2xl font-bold text-white">{winner} wins!</h2>
             <div className="mt-8 flex flex-col gap-3">
               <button
                 type="button"
-                className="btn-primary"
+                className="rounded-xl bg-gradient-to-r from-[#E53935] to-[#B71C1C] px-6 py-3 font-bold text-white shadow-lg hover:scale-105 transition"
                 onClick={() => {
                   setWinner(null)
-                  onExit ? onExit() : navigate(mode === 'multiplayer' ? '/play/friends' : '/play/random')
+                  onExit? onExit() : navigate(mode === 'multiplayer'? '/play/friends' : '/play/random')
                 }}
               >
                 Play Again
               </button>
-              <button type="button" className="btn-ghost" onClick={() => navigate('/')}>
+              <button type="button" className="rounded-xl border-[#374151] px-6 py-3 font-semibold text-gray-300 hover:bg-[#1F2937]" onClick={() => navigate('/')}>
                 Back to Home
               </button>
             </div>
@@ -177,35 +181,51 @@ export default function GameBoard({
 }
 
 const YARD_BG = {
-  red: 'bg-token-red/10',
-  green: 'bg-token-green/10',
-  yellow: 'bg-token-yellow/10',
-  blue: 'bg-token-blue/10'
+  red: 'bg-[#E53935]/20',
+  green: 'bg-[#43A047]/20',
+  yellow: 'bg-[#FDD835]/20',
+  blue: 'bg-[#1E88E5]/20'
 }
 
 const LANE_BG = {
-  red: 'bg-token-red/25',
-  green: 'bg-token-green/25',
-  yellow: 'bg-token-yellow/25',
-  blue: 'bg-token-blue/25'
+  red: 'bg-[#E53935]/40',
+  green: 'bg-[#43A047]/40',
+  yellow: 'bg-[#FDD835]/40',
+  blue: 'bg-[#1E88E5]/40'
 }
 
 function BoardCellRender({ cell, tokens = [], onTokenClick }) {
-  const bg =
-    cell.type === 'center'
-      ? 'bg-[conic-gradient(from_0deg,theme(colors.token.red),theme(colors.token.green),theme(colors.token.blue),theme(colors.token.yellow))] opacity-80'
-      : cell.type === 'yard'
-        ? YARD_BG[cell.yardColor]
-        : cell.homeLaneColor
-          ? LANE_BG[cell.homeLaneColor]
-          : 'bg-surface/60'
+  const isCenter = cell.type === 'center'
+  const isSafe = cell.safe && cell.type === 'path'
+
+  const bg = isCenter
+  ? 'bg-[#0B0F1A]'
+    : cell.type === 'yard'
+    ? YARD_BG[cell.yardColor]
+      : cell.homeLaneColor
+      ? LANE_BG[cell.homeLaneColor]
+        : isSafe
+        ? 'bg-[#FFD700]/25'
+          : 'bg-[#1F2937]'
 
   return (
-    <div className={`relative flex items-center justify-center border border-hairline/40 ${bg}`}>
-      {cell.safe && cell.type === 'path' && (
-        <span className="absolute h-1.5 w-1.5 rounded-full bg-brass/70" />
+    <div className={`relative flex items-center justify-center border border-[#374151]/50 ${isCenter? 'rounded-full' : 'rounded-[2px]'} ${bg}`}>
+
+      {isCenter && (
+        <div className="absolute inset-0 rounded-full overflow-hidden">
+          <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-[#E53935]" style={{clipPath: 'polygon(0 0, 100% 0, 0 100%)'}}/>
+          <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-[#43A047]" style={{clipPath: 'polygon(100% 0, 100% 100%, 0 0)'}}/>
+          <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-[#FDD835]" style={{clipPath: 'polygon(0 100%, 100% 100%, 0 0)'}}/>
+          <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-[#1E88E5]" style={{clipPath: 'polygon(100% 100%, 100% 0, 0 100%)'}}/>
+          <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[10px] tracking-wider">LUDO</div>
+        </div>
       )}
-      <div className="flex flex-wrap items-center justify-center gap-[1px]">
+
+      {isSafe && (
+        <span className="absolute text-[#FFD700] text-[11px] font-bold drop-shadow-[0_0_6px_#FFD700]">★</span>
+      )}
+
+      <div className="flex flex-wrap items-center justify-center gap-[2px] z-10">
         {(tokens || []).map((t) => (
           <Token
             key={`${t.color}-${t.tokenId}`}
