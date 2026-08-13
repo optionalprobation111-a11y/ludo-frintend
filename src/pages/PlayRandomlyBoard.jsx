@@ -106,6 +106,9 @@ export default function PlayRandomlyBoard() {
         roomId={roomId}
         opponents={bot ? [{ name: bot.name, color: 'red' }] : []}
         onExit={() => navigate('/play/random')}
+        isSolo={true}
+        botName={bot?.name}
+        botDifficulty={bot?.difficulty}
       />
     </>
   )
