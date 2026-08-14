@@ -1,25 +1,48 @@
 const COLOR_MAP = {
-  red: 'from-[#E53935] to-[#B71C1C]',
-  green: 'from-[#43A047] to-[#1B5E20]',
-  yellow: 'from-[#FDD835] to-[#F9A825]',
-  blue: 'from-[#1E88E5] to-[#0D47A1]'
+  red: {
+    gradient: 'bg-gradient-to-br from-red-400 via-red-600 to-red-800',
+    glow: 'shadow-[0_0_15px_rgba(225,72,63,0.7)]',
+    border: 'border-red-300/60'
+  },
+  green: {
+    gradient: 'bg-gradient-to-br from-green-400 via-green-600 to-green-800',
+    glow: 'shadow-[0_0_15px_rgba(47,166,106,0.7)]',
+    border: 'border-green-300/60'
+  },
+  yellow: {
+    gradient: 'bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700',
+    glow: 'shadow-[0_0_15px_rgba(240,178,61,0.7)]',
+    border: 'border-yellow-200/60'
+  },
+  blue: {
+    gradient: 'bg-gradient-to-br from-blue-400 via-blue-600 to-blue-800',
+    glow: 'shadow-[0_0_15px_rgba(62,124,214,0.7)]',
+    border: 'border-blue-300/60'
+  }
 }
 
 export default function Token({ color = 'red', active = false, onClick, style }) {
+  const tokenColors = COLOR_MAP[color] || COLOR_MAP.red
+
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={!active}
       style={style}
-      className={`relative h-8 w-8 rounded-full border-[3px] border-white
-        bg-gradient-to-br ${COLOR_MAP[color]}
-        shadow-[0_5px_10px_rgba(0,0,0,0.5),inset_0_2px_3px_rgba(255,255,255,0.4)]
-        transition-all duration-200
-        ${active? 'cursor-pointer hover:scale-125 animate-pulse ring-2 ring-[#FFD700] ring-offset-1 ring-offset-[#0B0F1A]' : 'cursor-default opacity-90'}`}
+      aria-label={`${color} token${active ? ', movable' : ''}`}
+      className={`relative h-7 w-7 rounded-full border-2 ${tokenColors.border} ${tokenColors.gradient}
+        ${active ? `cursor-pointer animate-pulse-ring ${tokenColors.glow}` : 'cursor-default opacity-90'}
+        transition-transform duration-200 ${active ? 'hover:scale-125 active:scale-95' : ''}
+        shadow-[0_4px_10px_rgba(0,0,0,0.5)]`}
     >
-      <span className="absolute top-[2px] left-[3px] h-3 w-3 rounded-full bg-white/40 blur-[1px]" />
-      <span className="absolute inset-[4px] rounded-full bg-black/10" />
+      {/* Inner glossy highlight */}
+      <span className="absolute inset-1 rounded-full bg-gradient-to-b from-white/50 to-white/10" />
+      {/* Center tiny dot for depth */}
+      <span className="absolute inset-[35%] rounded-full bg-black/20 blur-[1px]" />
+      {active && (
+        <span className="absolute -inset-1 rounded-full border-2 border-white/40 animate-ping-slow" />
+      )}
     </button>
   )
 }
