@@ -191,7 +191,7 @@ function BoardCellRender({ cell, tokens = [], onTokenClick }) {
 
   return (
     <div
-      className={`relative flex items-center justify-center border border-gray-700/80 ${bgClass}`}
+      className={`relative flex items-center justify-center border border-gray-700/80 ${bgClass} min-w-0 min-h-0 overflow-hidden`}
     >
       {isCenter ? (
         <div className="absolute inset-0">
@@ -213,14 +213,16 @@ function BoardCellRender({ cell, tokens = [], onTokenClick }) {
         )
       )}
 
-      <div className="relative z-10 flex flex-wrap items-center justify-center gap-[2px]">
+      {/* Tokens ko absolute position de diya taaki wo cell size ko affect na karein */}
+      <div className="absolute inset-0 flex items-center justify-center flex-wrap gap-[2px] pointer-events-none z-10">
         {(tokens || []).map((t) => (
-          <Token
-            key={`${t.color}-${t.tokenId}`}
-            color={t.color}
-            active={t.movable}
-            onClick={() => onTokenClick(t.tokenId)}
-          />
+          <div key={`${t.color}-${t.tokenId}`} className="pointer-events-auto">
+            <Token
+              color={t.color}
+              active={t.movable}
+              onClick={() => onTokenClick(t.tokenId)}
+            />
+          </div>
         ))}
       </div>
     </div>
