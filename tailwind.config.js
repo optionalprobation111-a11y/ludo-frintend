@@ -52,12 +52,17 @@ export default {
         'pulse-ring': {
           '0%': { boxShadow: '0 0 0 0 rgba(198,161,91,0.45)' },
           '100%': { boxShadow: '0 0 0 14px rgba(198,161,91,0)' }
+        },
+        'ping-slow': {
+          '0%': { transform: 'scale(1)', opacity: '0.8' },
+          '75%, 100%': { transform: 'scale(1.5)', opacity: '0' }
         }
       },
       animation: {
         'dice-tumble': 'dice-tumble 0.6s cubic-bezier(.2,.8,.3,1)',
         'rise-in': 'rise-in 0.5s cubic-bezier(.2,.8,.3,1) both',
-        'pulse-ring': 'pulse-ring 1.6s cubic-bezier(0,0,0.2,1) infinite'
+        'pulse-ring': 'pulse-ring 1.6s cubic-bezier(0,0,0.2,1) infinite',
+        'ping-slow': 'ping-slow 1.5s cubic-bezier(0,0,0.2,1) infinite'
       }
     }
   },
