@@ -91,7 +91,7 @@ export default function GameBoard({
       offState()
       offOver()
     }
-  }, [roomId, token, anonId, name, isSolo, botName, botDifficulty]) // ✅ legalMoves hata diya
+  }, [roomId, token, anonId, name, isSolo, botName, botDifficulty])
 
   const handleRoll = () => {
     if (!roomId) return
@@ -105,10 +105,10 @@ export default function GameBoard({
   }
 
   return (
-    <div className="board-backdrop min-h-screen bg-gradient-to-br from-[#0B0F1A] via-[#111827] to-[#0B0F1A]">
+    <div className="min-h-screen bg-[#0B0F1A] py-6 px-2">
       <PageHeader showBack />
 
-      <main className="mx-auto flex max-w-4xl flex-col items-center gap-6 px-4 pb-16">
+      <main className="mx-auto flex max-w-4xl flex-col items-center gap-6">
         <div className="flex w-full flex-wrap items-center justify-center gap-3">
           {opponents.map((o) => (
             <span
@@ -125,13 +125,8 @@ export default function GameBoard({
           ))}
         </div>
 
-        <div
-          className="aspect-square w-full max-w-[600px] overflow-hidden p-4 rounded-3xl
-          bg-gradient-to-br from-[#111827] to-[#0B0F1A]
-          shadow-[0_20px_50px_rgba(0,0,0,0.6)]
-          border-2 border-[#374151]"
-        >
-          <div className="grid h-full w-full grid-cols-[repeat(15,1fr)] grid-rows-[repeat(15,1fr)] gap-[2px]">
+        <div className="relative w-full max-w-[600px] aspect-square rounded-xl overflow-hidden shadow-2xl border-4 border-gray-800 bg-white">
+          <div className="grid h-full w-full grid-cols-[repeat(15,1fr)] grid-rows-[repeat(15,1fr)]">
             {cells.map((cell) => (
               <BoardCellRender
                 key={`${cell.row}-${cell.col}`}
@@ -158,10 +153,7 @@ export default function GameBoard({
 
       {winner && (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm">
-          <div
-            className="w-full max-w-sm animate-rise-in p-8 text-center rounded-2xl
-            bg-gradient-to-br from-[#111827] to-[#0B0F1A] border-2 border-[#374151]"
-          >
+          <div className="w-full max-w-sm animate-rise-in p-8 text-center rounded-2xl bg-gradient-to-br from-[#111827] to-[#0B0F1A] border-2 border-[#374151]">
             <span className="text-5xl">🏆</span>
             <h2 className="mt-4 font-display text-2xl font-bold text-white">{winner} wins!</h2>
             <div className="mt-8 flex flex-col gap-3">
@@ -179,7 +171,7 @@ export default function GameBoard({
               </button>
               <button
                 type="button"
-                className="rounded-xl border-[#374151] px-6 py-3 font-semibold text-gray-300 hover:bg-[#1F2937]"
+                className="rounded-xl border border-[#374151] px-6 py-3 font-semibold text-gray-300 hover:bg-[#1F2937]"
                 onClick={() => navigate('/')}
               >
                 Back to Home
@@ -192,71 +184,36 @@ export default function GameBoard({
   )
 }
 
-const YARD_BG = {
-  red: 'bg-[#E53935]/20',
-  green: 'bg-[#43A047]/20',
-  yellow: 'bg-[#FDD835]/20',
-  blue: 'bg-[#1E88E5]/20'
-}
-
-const LANE_BG = {
-  red: 'bg-[#E53935]/40',
-  green: 'bg-[#43A047]/40',
-  yellow: 'bg-[#FDD835]/40',
-  blue: 'bg-[#1E88E5]/40'
-}
-
 function BoardCellRender({ cell, tokens = [], onTokenClick }) {
-  const isCenter = cell.type === 'center'
-  const isSafe = cell.safe && cell.type === 'path'
-
-  const bg = isCenter
-    ? 'bg-[#0B0F1A]'
-    : cell.type === 'yard'
-    ? YARD_BG[cell.yardColor]
-    : cell.homeLaneColor
-    ? LANE_BG[cell.homeLaneColor]
-    : isSafe
-    ? 'bg-[#FFD700]/25'
-    : 'bg-[#1F2937]'
+  const { bgClass, type, safe } = cell
+  const isCenter = type === 'center'
+  const isSafe = safe && type === 'path'
 
   return (
     <div
-      className={`relative flex items-center justify-center border border-[#374151]/50 ${
-        isCenter ? 'rounded-full' : 'rounded-[2px]'
-      } ${bg}`}
+      className={`relative flex items-center justify-center border border-gray-700/80 ${bgClass}`}
     >
-      {isCenter && (
-        <div className="absolute inset-0 rounded-full overflow-hidden">
-          <div
-            className="absolute top-0 left-0 w-1/2 h-1/2 bg-[#E53935]"
-            style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}
-          />
-          <div
-            className="absolute top-0 right-0 w-1/2 h-1/2 bg-[#43A047]"
-            style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 0)' }}
-          />
-          <div
-            className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-[#FDD835]"
-            style={{ clipPath: 'polygon(0 100%, 100% 100%, 0 0)' }}
-          />
-          <div
-            className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-[#1E88E5]"
-            style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)' }}
-          />
-          <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[10px] tracking-wider">
+      {isCenter ? (
+        <div className="absolute inset-0">
+          <div className="grid grid-cols-2 grid-rows-2 h-full w-full">
+            <div className="bg-red-500" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
+            <div className="bg-green-500" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 0)' }} />
+            <div className="bg-yellow-400" style={{ clipPath: 'polygon(0 100%, 100% 100%, 0 0)' }} />
+            <div className="bg-blue-500" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)' }} />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center font-black text-[10px] tracking-wider text-white drop-shadow-lg">
             LUDO
           </div>
         </div>
+      ) : (
+        isSafe && (
+          <span className="absolute text-yellow-300 text-sm font-bold drop-shadow-[0_0_4px_#FFD700]">
+            ★
+          </span>
+        )
       )}
 
-      {isSafe && (
-        <span className="absolute text-[#FFD700] text-[11px] font-bold drop-shadow-[0_0_6px_#FFD700]">
-          ★
-        </span>
-      )}
-
-      <div className="flex flex-wrap items-center justify-center gap-[2px] z-10">
+      <div className="relative z-10 flex flex-wrap items-center justify-center gap-[2px]">
         {(tokens || []).map((t) => (
           <Token
             key={`${t.color}-${t.tokenId}`}
