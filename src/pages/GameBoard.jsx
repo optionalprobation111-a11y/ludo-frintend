@@ -39,11 +39,11 @@ export default function GameBoard({
     joinRoom({
       roomId,
       token,
-      name: name || (isSolo ? 'You' : 'Player'),
+      name: name || (isSolo? 'You' : 'Player'),
       isSolo,
       botName,
       botDifficulty,
-      anonId: !token ? anonId : undefined
+      anonId:!token? anonId : undefined
     })
 
     const offState = onGameState((state) => {
@@ -77,21 +77,19 @@ export default function GameBoard({
       try {
         await submitGameResult({
           token: token || undefined,
-          anonId: !token ? anonId : undefined,
+          anonId:!token? anonId : undefined,
           roomId,
           won: false,
           moveStats: {}
         })
-      } catch {
-        // non-blocking
-      }
+      } catch {}
     })
 
     return () => {
       offState()
       offOver()
     }
-  }, [roomId, token, anonId, name, isSolo, botName, botDifficulty])
+  }, [roomId, token, anonId, name, isSolo, botName, botDifficulty, legalMoves])
 
   const handleRoll = () => {
     if (!roomId) return
@@ -116,7 +114,7 @@ export default function GameBoard({
               className={`rounded-full border-2 px-4 py-1.5 text-sm font-semibold
                 ${
                   currentTurn === o.name
-                    ? 'border-[#FFD700] text-[#FFD700] bg-[#FFD700]/10'
+                  ? 'border-[#FFD700] text-[#FFD700] bg-[#FFD700]/10'
                     : 'border-[#374151] text-gray-400'
                 }`}
             >
@@ -125,8 +123,8 @@ export default function GameBoard({
           ))}
         </div>
 
-        <div className="relative w-full max-w-[600px] aspect-square rounded-xl overflow-hidden shadow-2xl border-4 border-gray-800 bg-white">
-          <div className="grid h-full w-full grid-cols-[repeat(15,1fr)] grid-rows-[repeat(15,1fr)]">
+        <div className="relative w-full max-w-[600px] aspect-square rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6)] border-4 border-gray-800">
+          <div className="grid h-full w-full grid-cols-[repeat(15,1fr)] grid-rows-[repeat(15,1fr)] gap-[1px] bg-gray-800">
             {cells.map((cell) => (
               <BoardCellRender
                 key={`${cell.row}-${cell.col}`}
@@ -146,7 +144,7 @@ export default function GameBoard({
             disabled={!roomId || Boolean(winner)}
           />
           <p className="text-sm font-medium text-gray-300">
-            {winner ? 'Game over' : currentTurn ? `${currentTurn}'s turn` : 'Waiting for the table…'}
+            {winner? 'Game over' : currentTurn? `${currentTurn}'s turn` : 'Waiting for the table…'}
           </p>
         </div>
       </main>
@@ -156,15 +154,15 @@ export default function GameBoard({
           <div className="w-full max-w-sm animate-rise-in p-8 text-center rounded-2xl bg-gradient-to-br from-[#111827] to-[#0B0F1A] border-2 border-[#374151]">
             <span className="text-5xl">🏆</span>
             <h2 className="mt-4 font-display text-2xl font-bold text-white">{winner} wins!</h2>
-            <div className="mt-8 flex flex-col gap-3">
+            <div className="mt-8 flex-col gap-3">
               <button
                 type="button"
                 className="rounded-xl bg-gradient-to-r from-[#E53935] to-[#B71C1C] px-6 py-3 font-bold text-white shadow-lg hover:scale-105 transition"
                 onClick={() => {
                   setWinner(null)
                   onExit
-                    ? onExit()
-                    : navigate(mode === 'multiplayer' ? '/play/friends' : '/play/random')
+                  ? onExit()
+                    : navigate(mode === 'multiplayer'? '/play/friends' : '/play/random')
                 }}
               >
                 Play Again
@@ -184,39 +182,62 @@ export default function GameBoard({
   )
 }
 
+const YARD_COLOR = {
+  red: 'bg-red-500',
+  green: 'bg-green-500',
+  yellow: 'bg-yellow-400',
+  blue: 'bg-blue-500'
+}
+
+const LANE_COLOR = {
+  red: 'bg-red-500/70',
+  green: 'bg-green-500/70',
+  yellow: 'bg-yellow-400/70',
+  blue: 'bg-blue-500/70'
+}
+
 function BoardCellRender({ cell, tokens = [], onTokenClick }) {
-  const { bgClass, type, safe } = cell
+  const { bgClass, type, safe, yardColor, homeLaneColor } = cell
   const isCenter = type === 'center'
   const isSafe = safe && type === 'path'
 
+  const bg = isCenter
+  ? 'bg-[#0B0F1A]'
+    : type === 'yard'
+  ? YARD_COLOR[yardColor]
+    : homeLaneColor
+  ? LANE_COLOR[homeLaneColor]
+    : 'bg-white'
+
   return (
-    <div
-      className={`relative flex items-center justify-center border border-gray-700/80 ${bgClass} min-w-0 min-h-0 overflow-hidden`}
-    >
-      {isCenter ? (
-        <div className="absolute inset-0">
-          <div className="grid grid-cols-2 grid-rows-2 h-full w-full">
-            <div className="bg-red-500" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
-            <div className="bg-green-500" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 0)' }} />
-            <div className="bg-yellow-400" style={{ clipPath: 'polygon(0 100%, 100% 100%, 0 0)' }} />
-            <div className="bg-blue-500" style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)' }} />
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center font-black text-[10px] tracking-wider text-white drop-shadow-lg">
-            LUDO
-          </div>
+    <div className={`relative flex items-center justify-center border-gray-700/50 ${bg} min-w-0 min-h-0 overflow-hidden`}>
+
+      {/* Center LUDO 3x3 */}
+      {isCenter && (
+        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 gap-[1px] p-[2px]">
+          {['L','U','D','O','L','U','D','O','L'].map((l,i) => (
+            <div key={i} className="flex items-center justify-center text-[6px] font-black text-white bg-[#111827]/90 rounded-[1px]">
+              {l}
+            </div>
+          ))}
         </div>
-      ) : (
-        isSafe && (
-          <span className="absolute text-yellow-300 text-sm font-bold drop-shadow-[0_0_4px_#FFD700]">
-            ★
-          </span>
-        )
       )}
 
-      {/* Tokens ko absolute position de diya taaki wo cell size ko affect na karein */}
-      <div className="absolute inset-0 flex items-center justify-center flex-wrap gap-[2px] pointer-events-none z-10">
-        {(tokens || []).map((t) => (
-          <div key={`${t.color}-${t.tokenId}`} className="pointer-events-auto">
+      {/* Safe Star */}
+      {!isCenter && isSafe && (
+        <span className="absolute text-yellow-400 text-[11px] font-bold drop-shadow-[0_0_6px_#FFD700] z-20">
+          ★
+        </span>
+      )}
+
+      {/* Tokens - Yard me stack */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+        {(tokens || []).slice(0,4).map((t, idx) => (
+          <div
+            key={`${t.color}-${t.tokenId}`}
+            className="pointer-events-auto"
+            style={type === 'yard'? {position: 'absolute', top: `${8 + idx * 18}%`, left: '50%', transform: 'translateX(-50%)'} : {}}
+          >
             <Token
               color={t.color}
               active={t.movable}
