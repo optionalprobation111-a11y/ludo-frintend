@@ -39,11 +39,11 @@ export default function GameBoard({
     joinRoom({
       roomId,
       token,
-      name: name || (isSolo? 'You' : 'Player'),
+      name: name || (isSolo ? 'You' : 'Player'),
       isSolo,
       botName,
       botDifficulty,
-      anonId:!token? anonId : undefined
+      anonId: !token ? anonId : undefined
     })
 
     const offState = onGameState((state) => {
@@ -77,7 +77,7 @@ export default function GameBoard({
       try {
         await submitGameResult({
           token: token || undefined,
-          anonId:!token? anonId : undefined,
+          anonId: !token ? anonId : undefined,
           roomId,
           won: false,
           moveStats: {}
@@ -91,7 +91,7 @@ export default function GameBoard({
       offState()
       offOver()
     }
-  }, [roomId, token, anonId, name, isSolo, botName, botDifficulty, legalMoves])
+  }, [roomId, token, anonId, name, isSolo, botName, botDifficulty]) // ✅ legalMoves hata diya
 
   const handleRoll = () => {
     if (!roomId) return
@@ -114,19 +114,23 @@ export default function GameBoard({
             <span
               key={o.name}
               className={`rounded-full border-2 px-4 py-1.5 text-sm font-semibold
-                ${currentTurn === o.name
-                 ? 'border-[#FFD700] text-[#FFD700] bg-[#FFD700]/10'
-                  : 'border-[#374151] text-gray-400'}`}
+                ${
+                  currentTurn === o.name
+                    ? 'border-[#FFD700] text-[#FFD700] bg-[#FFD700]/10'
+                    : 'border-[#374151] text-gray-400'
+                }`}
             >
               {o.name}
             </span>
           ))}
         </div>
 
-        <div className="aspect-square w-full max-w-[600px] overflow-hidden p-4 rounded-3xl
+        <div
+          className="aspect-square w-full max-w-[600px] overflow-hidden p-4 rounded-3xl
           bg-gradient-to-br from-[#111827] to-[#0B0F1A]
           shadow-[0_20px_50px_rgba(0,0,0,0.6)]
-          border-2 border-[#374151]">
+          border-2 border-[#374151]"
+        >
           <div className="grid h-full w-full grid-cols-[repeat(15,1fr)] grid-rows-[repeat(15,1fr)] gap-[2px]">
             {cells.map((cell) => (
               <BoardCellRender
@@ -147,15 +151,17 @@ export default function GameBoard({
             disabled={!roomId || Boolean(winner)}
           />
           <p className="text-sm font-medium text-gray-300">
-            {winner? 'Game over' : currentTurn? `${currentTurn}'s turn` : 'Waiting for the table…'}
+            {winner ? 'Game over' : currentTurn ? `${currentTurn}'s turn` : 'Waiting for the table…'}
           </p>
         </div>
       </main>
 
       {winner && (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm">
-          <div className="w-full max-w-sm animate-rise-in p-8 text-center rounded-2xl
-            bg-gradient-to-br from-[#111827] to-[#0B0F1A] border-2 border-[#374151]">
+          <div
+            className="w-full max-w-sm animate-rise-in p-8 text-center rounded-2xl
+            bg-gradient-to-br from-[#111827] to-[#0B0F1A] border-2 border-[#374151]"
+          >
             <span className="text-5xl">🏆</span>
             <h2 className="mt-4 font-display text-2xl font-bold text-white">{winner} wins!</h2>
             <div className="mt-8 flex flex-col gap-3">
@@ -164,12 +170,18 @@ export default function GameBoard({
                 className="rounded-xl bg-gradient-to-r from-[#E53935] to-[#B71C1C] px-6 py-3 font-bold text-white shadow-lg hover:scale-105 transition"
                 onClick={() => {
                   setWinner(null)
-                  onExit? onExit() : navigate(mode === 'multiplayer'? '/play/friends' : '/play/random')
+                  onExit
+                    ? onExit()
+                    : navigate(mode === 'multiplayer' ? '/play/friends' : '/play/random')
                 }}
               >
                 Play Again
               </button>
-              <button type="button" className="rounded-xl border-[#374151] px-6 py-3 font-semibold text-gray-300 hover:bg-[#1F2937]" onClick={() => navigate('/')}>
+              <button
+                type="button"
+                className="rounded-xl border-[#374151] px-6 py-3 font-semibold text-gray-300 hover:bg-[#1F2937]"
+                onClick={() => navigate('/')}
+              >
                 Back to Home
               </button>
             </div>
@@ -199,30 +211,49 @@ function BoardCellRender({ cell, tokens = [], onTokenClick }) {
   const isSafe = cell.safe && cell.type === 'path'
 
   const bg = isCenter
-  ? 'bg-[#0B0F1A]'
+    ? 'bg-[#0B0F1A]'
     : cell.type === 'yard'
     ? YARD_BG[cell.yardColor]
-      : cell.homeLaneColor
-      ? LANE_BG[cell.homeLaneColor]
-        : isSafe
-        ? 'bg-[#FFD700]/25'
-          : 'bg-[#1F2937]'
+    : cell.homeLaneColor
+    ? LANE_BG[cell.homeLaneColor]
+    : isSafe
+    ? 'bg-[#FFD700]/25'
+    : 'bg-[#1F2937]'
 
   return (
-    <div className={`relative flex items-center justify-center border border-[#374151]/50 ${isCenter? 'rounded-full' : 'rounded-[2px]'} ${bg}`}>
-
+    <div
+      className={`relative flex items-center justify-center border border-[#374151]/50 ${
+        isCenter ? 'rounded-full' : 'rounded-[2px]'
+      } ${bg}`}
+    >
       {isCenter && (
         <div className="absolute inset-0 rounded-full overflow-hidden">
-          <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-[#E53935]" style={{clipPath: 'polygon(0 0, 100% 0, 0 100%)'}}/>
-          <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-[#43A047]" style={{clipPath: 'polygon(100% 0, 100% 100%, 0 0)'}}/>
-          <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-[#FDD835]" style={{clipPath: 'polygon(0 100%, 100% 100%, 0 0)'}}/>
-          <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-[#1E88E5]" style={{clipPath: 'polygon(100% 100%, 100% 0, 0 100%)'}}/>
-          <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[10px] tracking-wider">LUDO</div>
+          <div
+            className="absolute top-0 left-0 w-1/2 h-1/2 bg-[#E53935]"
+            style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}
+          />
+          <div
+            className="absolute top-0 right-0 w-1/2 h-1/2 bg-[#43A047]"
+            style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 0)' }}
+          />
+          <div
+            className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-[#FDD835]"
+            style={{ clipPath: 'polygon(0 100%, 100% 100%, 0 0)' }}
+          />
+          <div
+            className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-[#1E88E5]"
+            style={{ clipPath: 'polygon(100% 100%, 100% 0, 0 100%)' }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[10px] tracking-wider">
+            LUDO
+          </div>
         </div>
       )}
 
       {isSafe && (
-        <span className="absolute text-[#FFD700] text-[11px] font-bold drop-shadow-[0_0_6px_#FFD700]">★</span>
+        <span className="absolute text-[#FFD700] text-[11px] font-bold drop-shadow-[0_0_6px_#FFD700]">
+          ★
+        </span>
       )}
 
       <div className="flex flex-wrap items-center justify-center gap-[2px] z-10">
