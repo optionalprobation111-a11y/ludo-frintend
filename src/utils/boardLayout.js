@@ -1,4 +1,4 @@
-// boardLayout.js (Pro Enhanced)
+// boardLayout.js (Pro Enhanced + Correct Safe Cells)
 // ----------------------------------------------------------------
 // 15x15 Ludo board metadata with rich styling info for each cell.
 // Backend steps mapping remains unchanged.
@@ -13,6 +13,12 @@ export const ENTRY_INDEX = {
   yellow: 26,
   blue: 39
 }
+
+// Hardcoded safe/star cells (absolute grid positions)
+const SAFE_CELLS = new Set([
+  '6,1', '8,13', '1,8', '13,6', // arm entry safe cells
+  '2,6', '6,12', '12,8', '8,2'  // star cells
+])
 
 export const SAFE_POSITIONS = new Set([0, 8, 13, 21, 26, 34, 39, 47])
 
@@ -106,8 +112,6 @@ export function buildBoard() {
       let yardColor = null
       let homeLaneColor = null
       let bgClass = 'bg-surface/60 border-hairline/40'
-      let isStar = false
-      let entryIndex = null
 
       // Determine type & base color
       if (inCrossRows && inCrossCols) {
@@ -155,12 +159,8 @@ export function buildBoard() {
         bgClass = 'bg-gradient-to-r from-yellow-500/40 to-yellow-900/50 border-yellow-500/20'
       }
 
-      // Safe cells & stars on path
-      const absPos = (ENTRY_INDEX.red + (r * SIZE + c)) % 52 // not accurate but harmless for safe flag display
-      if (SAFE_POSITIONS.has(absPos) && (inCrossRows || inCrossCols)) {
-        isStar = true
-        bgClass += ' safe-star'
-      }
+      // Safe flag using hardcoded accurate coordinates
+      const isSafe = SAFE_CELLS.has(`${r},${c}`)
 
       cells.push({
         row: r,
@@ -168,9 +168,8 @@ export function buildBoard() {
         type,
         yardColor,
         homeLaneColor,
-        safe: isStar,
-        bgClass,
-        entryIndex
+        safe: isSafe,
+        bgClass
       })
     }
   }
