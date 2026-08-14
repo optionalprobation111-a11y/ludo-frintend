@@ -21,6 +21,8 @@ const COLOR_MAP = {
   }
 }
 
+const LETTER_MAP = { red: 'R', green: 'G', yellow: 'Y', blue: 'B' }
+
 export default function Token({ color = 'red', active = false, onClick, style }) {
   const tokenColors = COLOR_MAP[color] || COLOR_MAP.red
 
@@ -30,18 +32,22 @@ export default function Token({ color = 'red', active = false, onClick, style })
       onClick={onClick}
       disabled={!active}
       style={style}
-      aria-label={`${color} token${active ? ', movable' : ''}`}
+      aria-label={`${color} token${active? ', movable' : ''}`}
       className={`relative h-7 w-7 rounded-full border-2 ${tokenColors.border} ${tokenColors.gradient}
-        ${active ? `cursor-pointer animate-pulse-ring ${tokenColors.glow}` : 'cursor-default opacity-90'}
-        transition-transform duration-200 ${active ? 'hover:scale-125 active:scale-95' : ''}
-        shadow-[0_4px_10px_rgba(0,0,0,0.5)]`}
+        ${active? `cursor-pointer animate-pulse ${tokenColors.glow}` : 'cursor-default opacity-90'}
+        transition-transform duration-200 ${active? 'hover:scale-125 active:scale-95' : ''}
+        shadow-[0_4px_10px_rgba(0,0,0,0.5)]
+        flex items-center justify-center font-black text-white text-[10px]`}
     >
+      {/* Letter beech me */}
+      {LETTER_MAP[color]}
+
       {/* Inner glossy highlight */}
-      <span className="absolute inset-1 rounded-full bg-gradient-to-b from-white/50 to-white/10" />
+      <span className="absolute inset-1 rounded-full bg-gradient-to-b from-white/50 to-white/10 pointer-events-none" />
       {/* Center tiny dot for depth */}
-      <span className="absolute inset-[35%] rounded-full bg-black/20 blur-[1px]" />
+      <span className="absolute inset-[35%] rounded-full bg-black/20 blur-[1px] pointer-events-none" />
       {active && (
-        <span className="absolute -inset-1 rounded-full border-2 border-white/40 animate-ping-slow" />
+        <span className="absolute -inset-1 rounded-full border-2 border-white/40 animate-ping pointer-events-none" />
       )}
     </button>
   )
